@@ -1,2 +1,0 @@
-# CartoonClassifier
-CartoonClassifier
