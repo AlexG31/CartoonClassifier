@@ -4,6 +4,8 @@ import codecs
 import numpy as np
 from PIL import Image
 import colorsys
+from skimage.feature import hog, daisy
+import matplotlib.pyplot as plt
 
 def MaxColorNumber(img, colorCountThreshold = 10,
         VThreshold = 125):
@@ -60,6 +62,7 @@ def GetImageFeatures(imagePath):
     # Append Features
     features = []
     features.extend(MaxColorNumber(img))
+    features.extend(MorphFeatures(img))
     
     # Color Features
 
@@ -67,6 +70,31 @@ def GetImageFeatures(imagePath):
     img.close()
     return features
 
+def MorphFeatures(img):
+    vecN = 32 + 32 * 2
+    vec = []
+    greyArray = list(img.convert('L').getdata())
+    M = img.height
+    N = img.width
+    cellN = min(N, M)
+    image = np.reshape(greyArray, [M, N])
+    
+    # HOG
+    res = hog(image, orientations=32, pixels_per_cell=(cellN, cellN),
+                    cells_per_block=(1, 1))
+    vec.extend(res.tolist())
+
+    # Daisy
+    res = daisy(image, radius = cellN / 2 - 1, histograms = 1)
+    daisyShape = res.shape
+    res = res.reshape(daisyShape[0] * daisyShape[1], daisyShape[2])
+    res *= 1e6
+    res = res.astype(int)
+    vec.extend(res[0,:].tolist())
+    vec.extend(res[-1,:].tolist())
+    assert len(vec) == vecN
+    return vec
+    
 def main():
     # imagePath = './data/cc/n1.jpg'
     imagePath = './data/cc/F0F9D13586BDD65EC48AE36F313C3A16C71ACFF8.jpg'
