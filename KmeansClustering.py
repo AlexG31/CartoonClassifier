@@ -14,18 +14,27 @@ import pickle
 from sklearn.cluster import KMeans
 import shutil
 
-def kmeans(featureMat, files):
-    km = KMeans(n_clusters = 8)
+def kmeans(featureMat, files,
+        outputFolder = './output',
+        n_clusters = 32):
+    km = KMeans(n_clusters = n_clusters)
     km.fit(featureMat)
+    with open(os.path.join(outputFolder, 'kmeans{}.pkl'.format(n_clusters)), 'w') as fout:
+        pickle.dump(km, fout)
+        print('Kmeans model saved.')
     print(km.labels_)
-    for ind in range(8):
-        path = './output/clusters/{}'.format(ind)
+    for ind in range(n_clusters):
+        path = os.path.join(outputFolder,
+                'clusters{}/{}'.format(n_clusters, 
+            ind))
         if os.path.exists(path):
             continue
         os.mkdir(path)
     for path, label in zip(files, km.labels_):
         name = os.path.split(path)[-1]
-        shutil.copyfile(path, './output/clusters/{}/{}'.format(label, name))
+        shutil.copyfile(path, '{}/clusters{}/{}/{}'.format(outputFolder,
+            n_clusters,
+            label, name))
     
     
 
@@ -38,9 +47,8 @@ def LoadFeatureMatrix(inPath):
         print(e)
         return None
 
-def CalcFeatures():
-    files = glob.glob('./data/part500/*')
-    files = files[:50]
+def CalcFeatures(inPath):
+    files = glob.glob(os.path.join(inPath, '*'))
     featureMat = []
     bar = ProgressBar()
     count = 0
@@ -63,9 +71,11 @@ def CalcFeatures():
     print('Average time:{} s'.format(np.average(tcList)))
 
 def main():
-    files = glob.glob('./data/part500/*')
-    files = files[:50]
-    fm = LoadFeatureMatrix('fm.pkl')
+    # inPath = sys.argv[1]
+    # CalcFeatures(inPath)
+    # files = glob.glob('./data/part500/*')
+    # files = files[:50]
+    fm, files = LoadFeatureMatrix('Features-10000.pkl')
     kmeans(fm, files)
 
 
